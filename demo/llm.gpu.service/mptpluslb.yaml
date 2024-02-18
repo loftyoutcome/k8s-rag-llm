@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mpt7b-deployment
+  namespace: ${MODEL_NAMESPACE}
+  labels:
+    app: modelllmserve
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      model: mpt7b
+  template:
+    metadata:
+      labels:
+        model: mpt7b
+    spec:
+      containers:
+        - name: mpt7b
+          image: elotl/mpt7bllm:v1.0
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: "1.5"
+              memory: "1G"
+            limits:
+              nvidia.com/gpu: "1"
+      imagePullSecrets:
+      - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mpt7b-service
+  namespace: ${MODEL_NAMESPACE}
+  labels:
+    app: modelllmserve
+spec:
+  type: LoadBalancer
+  selector:
+    model: mpt7b
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000

@@ -1,0 +1,14 @@
+apiVersion: policy.elotl.co/v1alpha1
+kind: SchedulePolicy
+metadata:
+  name: available-gpu-policy-${MODEL_NAMESPACE}
+spec:
+  resourceSelectors:
+    labelSelectors:
+    - matchLabels:
+        app: modelllmserve
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: ${MODEL_NAMESPACE}
+  groupBy:
+    labelKey: app
