@@ -50,7 +50,7 @@ echo ">Applying deployment for llm serving on workload cluster with available gp
 envsubst < llm.gpu.service/mptpluslb.yaml | kubectl apply --context=nova -f -
 
 echo ">Waiting for deployment to be available"
-kubectl wait --for=condition=available deployment/mpt7b-deployment --namespace ${MODEL_NAMESPACE} --timeout=15m --context=nova
+kubectl wait --for=condition=available deployment/mpt7b-deployment --namespace ${MODEL_NAMESPACE} --timeout=20m --context=nova
 
 echo ">Getting externalIP for LLM service"
 LLMIP=`kubectl get services --namespace ${MODEL_NAMESPACE} mpt7b-service --output jsonpath='{.status.loadBalancer.ingress[0].hostname}' --context=nova`
@@ -67,7 +67,7 @@ if [ "${RUN_INGESTION}" = true ]; then
     envsubst < llm.vdb.service/createvectordb.yaml | kubectl apply --context=nova -f -
 
     echo ">Waiting for job to complete"
-    kubectl wait --for=condition=complete job/createvectordb --namespace ${MODEL_NAMESPACE} --timeout=15m --context=nova
+    kubectl wait --for=condition=complete job/createvectordb --namespace ${MODEL_NAMESPACE} --timeout=20m --context=nova
 else
     echo "Skipping placing VectorDB-Ingester job on VectorDB-Ingester-Cluster"
 fi
@@ -83,7 +83,7 @@ MODEL_LLM_SERVER_URL="http://"${LLMIP}
 envsubst < llm.rag.service/serveragllmpluslb.yaml | kubectl apply --context=nova -f -
 
 echo ">Waiting for deployment to be available"
-kubectl wait --for=condition=available deployment/serveragllm-deployment --namespace ${MODEL_NAMESPACE} --timeout=15m --context=nova
+kubectl wait --for=condition=available deployment/serveragllm-deployment --namespace ${MODEL_NAMESPACE} --timeout=20m --context=nova
 
 echo ">Getting externalIPs for service"
 sleep 30 # wait for externalIPs to be synced to Nova CP
