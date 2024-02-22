@@ -1,0 +1,20 @@
+apiVersion: policy.elotl.co/v1alpha1
+kind: SchedulePolicy
+metadata:
+  name: spread-across-rag-servers-policy-${MODEL_NAMESPACE}
+spec:
+  spreadConstraints:
+    spreadMode: Duplicate
+    topologyKey: kubernetes.io/metadata.name
+  resourceSelectors:
+    labelSelectors:
+    - matchLabels:
+        app: modelragllmserve
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: ${MODEL_NAMESPACE}
+  groupBy:
+    labelKey: app
+  clusterSelector:
+    matchLabels:
+      nova.elotl.co/cluster.modelragllmserve: "true"

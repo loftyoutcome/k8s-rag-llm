@@ -1,0 +1,15 @@
+apiVersion: policy.elotl.co/v1alpha1
+kind: SchedulePolicy
+metadata:
+  name: ingestion-cluster-policy-${MODEL_NAMESPACE}
+spec:
+  clusterSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: ${MODEL_INGESTION_CLUSTER}
+  resourceSelectors:
+    labelSelectors:
+    - matchLabels:
+        app: modeldataingest
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: ${MODEL_NAMESPACE}

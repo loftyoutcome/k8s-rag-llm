@@ -1,0 +1,5 @@
+[project]
+name = "populateastradb"  # Required
+version = "1.0.0"  # Required
+description = "Populate AstraDB"
+requires-python = ">=3.8"

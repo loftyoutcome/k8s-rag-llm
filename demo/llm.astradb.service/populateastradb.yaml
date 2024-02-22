@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: populateastradb
+  namespace: ${MODEL_NAMESPACE}
+  labels:
+    app: modeldataingest
+spec:
+  ttlSecondsAfterFinished: 120
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: populateastradb
+        image: elotl/populateastradb:v1.0
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "1.5"
+            memory: "1G"
+        env:
+          - name: ASTRA_DB_APPLICATION_TOKEN
+            value: ${ASTRA_DB_APPLICATION_TOKEN}
+          - name: ASTRA_DB_API_ENDPOINT
+            value: ${ASTRA_DB_API_ENDPOINT}
+          - name: ASTRA_DB_COLLECTION
+            value: ${ASTRA_DB_COLLECTION}
+          - name: VECTOR_DB_INPUT_TYPE
+            value: ${VECTOR_DB_INPUT_TYPE}
+          - name: VECTOR_DB_INPUT_ARG
+            value: ${VECTOR_DB_INPUT_ARG}
+      imagePullSecrets:
+      - name: regcred

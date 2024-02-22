@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: serveragllm-deployment
+  namespace: ${MODEL_NAMESPACE}
+  labels:
+    app: modelragllmserve
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      model: serveragllm
+  template:
+    metadata:
+      labels:
+        model: serveragllm
+    spec:
+      containers:
+        - name: serveragllm
+          image: elotl/serveragllmastradb:v1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "1.5"
+              memory: "1G"
+          env:
+          - name: ASTRA_DB_APPLICATION_TOKEN
+            value: ${ASTRA_DB_APPLICATION_TOKEN}
+          - name: ASTRA_DB_API_ENDPOINT
+            value: ${ASTRA_DB_API_ENDPOINT}
+          - name: ASTRA_DB_COLLECTION
+            value: ${ASTRA_DB_COLLECTION}
+          - name: MODEL_LLM_SERVER_URL
+            value: ${MODEL_LLM_SERVER_URL}
+      imagePullSecrets:
+      - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: serveragllm-service
+  namespace: ${MODEL_NAMESPACE}
+  labels:
+    app: modelragllmserve
+spec:
+  type: LoadBalancer
+  selector:
+    model: serveragllm
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000

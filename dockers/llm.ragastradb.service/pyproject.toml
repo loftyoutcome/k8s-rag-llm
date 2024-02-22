@@ -1,0 +1,5 @@
+[project]
+name = "ragllmastradb"  # Required
+version = "1.0.0"  # Required
+description = "Web service question/answer RAG-enhanced LLM model using AstraDB"
+requires-python = ">=3.8"
