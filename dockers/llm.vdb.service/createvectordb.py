@@ -75,6 +75,13 @@ if __name__ == "__main__":
         print("Please set environment variable VECTOR_DB_INPUT_ARG")
         sys.exit(1)
 
+    # This is the bucket that will be used to store both input datasets for 
+    # RAG as well as the Vector DB created from this dataset
+    vectordb_bucket = os.environ.get('VECTOR_DB_S3_BUCKET')
+    if vectordb_bucket is None:
+        print("Please set environment variable VECTOR_DB_S3_BUCKET")
+        sys.exit(1)
+
     # This is the name of the Vector DB file that will be created by this script
     # and will be used by query_rag.py. It has to be unique for each dataset
     # corresponding to a unique VectorDB (or vector store)
@@ -106,13 +113,6 @@ if __name__ == "__main__":
         #Ref: https://python.langchain.com/docs/integrations/vectorstores/faiss
 
         # download text documents from the S3 bucket 
-
-        # this is the bucket that will be used to store both input datasets for 
-        # RAG as well as the Vector DB created from this dataset
-        vectordb_bucket = os.environ.get('VECTOR_DB_S3_BUCKET')
-        if vectordb_bucket is None:
-            print("Please set environment variable VECTOR_DB_S3_BUCKET")
-            sys.exit(1)
 
         # This is a folder within the S3 bucket which will contain all the 
         # text documents that need to be used as the RAG dataset 
