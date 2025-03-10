@@ -65,7 +65,7 @@ def setup(
             retriever = vectorstore.as_retriever(search_kwargs={"k": relevant_docs})
             logging.info("Created Vector DB retriever successfully. \n")
 
-            logging.info((
+            logging.info(
                 "Creating an OpenAI client to the hosted model at URL: ", llm_server_url
             )
             try:
@@ -93,7 +93,7 @@ def setup(
 
     @app.get("/answer/{question}")
     def read_item(question: Union[str, None] = None):
-        logging.info((f"Received question: {question}")
+        logging.info(f"Received question: {question}")
         answer = get_answer(question)
         return {"question": question, "answer": answer}
 
