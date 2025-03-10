@@ -60,6 +60,8 @@ spec:
             value: ${WEAVIATE_INDEX_NAME}
           - name: WEAVIATE_HYBRID_ALPHA_DEFAULT
             value: ${WEAVIATE_HYBRID_ALPHA_DEFAULT}
+          - name: MODEL_MAX_CONTEXT_LEN
+            value: ${MODEL_MAX_CONTEXT_LEN}
           volumeMounts:
           - name: log-storage
             mountPath: /app/logs
