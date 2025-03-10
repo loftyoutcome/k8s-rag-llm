@@ -58,6 +58,8 @@ spec:
             value: ${WEAVIATE_GRPC_URI_WITH_PORT}
           - name: WEAVIATE_INDEX_NAME
             value: ${WEAVIATE_INDEX_NAME}
+          - name: WEAVIATE_HYBRID_ALPHA_DEFAULT
+            value: ${WEAVIATE_HYBRID_ALPHA_DEFAULT}
           volumeMounts:
           - name: log-storage
             mountPath: /app/logs
