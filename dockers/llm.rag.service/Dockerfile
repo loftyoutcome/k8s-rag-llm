@@ -1,13 +1,16 @@
-# syntax=docker/dockerfile-upstream:master
+# syntax=docker/dockerfile:1
 # Adapted from: https://github.com/pytorch/pytorch/blob/master/Dockerfile
-FROM python:3.11-slim as base-container
+FROM python:3.11-slim AS base-container
 
 # Automatically set by buildx
 ARG TARGETPLATFORM
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+# Upgrade pip
+RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel
+
+RUN apt-get update && apt-get install -y \
   build-essential \
   ca-certificates \
   ccache \
@@ -18,14 +21,34 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 WORKDIR /serveragllm
 
-COPY serveragllm.py .
-COPY pyproject.toml .
+# Install dependencies in separate layers
+RUN pip3 install --no-cache-dir \
+    "openai" \
+    "langchain" \
+    "langchain_community" \
+    "langchain_huggingface" \
+    "unstructured" \
+    "sentence-transformers" \
+    "faiss-cpu" \
+    "fastapi" \
+    "boto3" \
+    "uvicorn[standard]" \
+    "weaviate-client" \
+    "langchain_weaviate" \
+    "langchain-community" \
+    "pandas" \
+    "sqlalchemy"  \
+    "langchain-openai"  \
+    "pandas"
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-  pip3 install -v --no-cache-dir \
-  "openai" "langchain" "sentence-transformers" "faiss-cpu" "uvicorn[standard]" "fastapi" "boto3" && \
-  pip3 install --no-cache-dir -e .
+COPY __init__.py .
+COPY proxy_app.py .
+COPY serveragllm.py .
+COPY serverragllm_jira_cvs_local.py .
+COPY serverragllm_csv_to_weaviate_local.py .
+COPY common.py .
+COPY pyproject.toml .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "serveragllm:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "proxy_app.py"]

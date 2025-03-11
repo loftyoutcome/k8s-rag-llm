@@ -1,0 +1,77 @@
+name: Build and Release Images
+
+on:
+  push:
+    tags:
+      - v*
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Tags'
+env:
+  AWS_REGION: "us-east-1"
+
+permissions:
+  contents: read
+  pull-requests: read
+  repository-projects: read
+
+jobs:
+  release-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check permissions using GitHub CLI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          permission=$(gh api repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission --jq '.permission')
+          if [ "$permission" = "admin" ]; then
+            echo "Has admin access"
+            # Your workflow steps here
+          else
+            echo "Permission denied"
+            exit 1
+          fi
+          
+      - name: Remove software and language runtimes we're not using
+        run: |
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/local/lib/node_modules
+          sudo rm -rf /usr/local/julia*
+          sudo rm -rf /opt/google/chrome
+          df . -h
+
+      - name: Check out repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+
+      - name: Fetch all tags
+        run: git fetch origin +refs/tags/*:refs/tags/*
+
+      - name: Set up Docker
+        uses: ./.github/actions/setup-docker
+        with:
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set tag
+        run: |
+          TAG=$(git describe --tags --match "v*" --abbrev=0)
+          echo "TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Build and push image - createvectordb
+        run: |
+          ./dockers/llm.vdb.service/makeDocker.sh elotl/createvectordb ${{ env.TAG }}
+
+      - name: Build and push image - llm-chat
+        run: |
+          ./dockers/llm.chatui.service/makeDocker.sh elotl/llm-chat ${{ env.TAG }}
+
+      - name: Build and push image - serveragllm
+        run: |
+          ./dockers/llm.rag.service/makeDocker.sh elotl/serveragllm ${{ env.TAG }}

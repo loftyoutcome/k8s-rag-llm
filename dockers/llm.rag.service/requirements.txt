@@ -1,0 +1,13 @@
+uvicorn
+faiss-cpu
+fastapi
+langchain-community
+langchain-huggingface
+openai
+uvicorn
+pandas
+sqlalchemy
+langchain-openai
+langchain_community
+pandas
+weaviate

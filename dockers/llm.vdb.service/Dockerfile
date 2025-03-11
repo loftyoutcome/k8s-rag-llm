@@ -1,6 +1,6 @@
-# syntax=docker/dockerfile-upstream:master
+# syntax=docker/dockerfile:1
 # Adapted from: https://github.com/pytorch/pytorch/blob/master/Dockerfile
-FROM python:3.11-slim as base-container
+FROM python:3.11-slim AS base-container
 
 # Automatically set by buildx
 ARG TARGETPLATFORM
@@ -12,18 +12,45 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   ca-certificates \
   ccache \
   curl \
+  libmagic1 \
+  file \
   libssl-dev ca-certificates make \
   git python3-pip && \
   rm -rf /var/lib/apt/lists/*
 
 WORKDIR /createvectordb
 
-COPY createvectordb.py .
-COPY pyproject.toml .
+# Upgrade pip
+RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-  pip3 install -v --no-cache-dir \
-  "langchain" "sentence-transformers" "faiss-cpu" "boto3" "lxml" "bs4" && \
-  pip3 install --no-cache-dir -e .
+# Install dependencies in separate layers
+RUN pip3 install --no-cache-dir \
+    "langchain" \
+    "langchain_community" \
+    "langchain_huggingface"
+
+RUN pip3 install --no-cache-dir \
+    "unstructured" \
+    "sentence-transformers" \
+    "faiss-cpu"
+
+RUN pip3 install --no-cache-dir \
+    "lxml" \
+    "bs4"
+
+RUN pip3 install --no-cache-dir \
+    "python-magic" \
+    "pydantic_settings" \
+    "s3fs" \
+    "weaviate-client" \
+    "langchain_weaviate"
+
+COPY __init__.py .
+COPY createvectordb.py .
+COPY common.py .
+COPY config.py .
+COPY s3_utils.py .
+COPY service.py .
+COPY pyproject.toml .
 
 CMD ["python", "createvectordb.py"]

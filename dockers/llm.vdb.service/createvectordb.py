@@ -1,55 +1,55 @@
-import os
+import click
+import logging
 import sys
 
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_community.document_loaders.sitemap import SitemapLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from config import (
+    try_load_settings,
+    try_load_weaviate_settings,
+)
+from service import (
+    LocalDirDbCreationService,
+    LocalDirWeaviateDbCreationService,
+    S3WeaviateDbCreationService,
+    S3VectorDbCreationService,
+)
 
-import boto3
-import pickle
 
-vectordb_bucket = "faiss-vectordbs"
+logging.basicConfig()
+logging.getLogger().setLevel(logging.INFO)
 
-vectordb_key = os.environ.get('VECTOR_DB_S3_FILE')
-if vectordb_key is None:
-    print("Please set environment variable VECTOR_DB_S3_FILE")
-    sys.exit(1)
 
-vectordb_input_type = os.environ.get('VECTOR_DB_INPUT_TYPE')
-if vectordb_input_type is None:
-    print("Please set environment variable VECTOR_DB_INPUT_TYPE")
-    sys.exit(1)
+@click.command()
+@click.option("--env_file", type=click.Path(exists=True), help="Path to the environment file")
+def run(env_file: str):
+    s3_settings, local_settings = try_load_settings(env_file)
+    weaviate_settings = try_load_weaviate_settings(env_file)
 
-vectordb_input_arg = os.environ.get('VECTOR_DB_INPUT_ARG')
-if vectordb_input_arg is None:
-    print("Please set environment variable VECTOR_DB_INPUT_ARG")
-    sys.exit(1)
+    if s3_settings:
+        if weaviate_settings.is_set():
+            logging.info("---> S3WeaviateDbCreationService")
+            service = S3WeaviateDbCreationService(s3_settings, weaviate_settings)
+        else:
+            logging.info("---> S3VectorDbCreationService")
+            service = S3VectorDbCreationService(s3_settings)
 
-# Initialize vectorstore and create pickle representation
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-if vectordb_input_type == 'text':
-    vectorstore = FAISS.from_texts(vectordb_input_arg, embedding=HuggingFaceEmbeddings())
-elif vectordb_input_type == 'sitemap':
-    sitemap_loader = SitemapLoader(web_path=vectordb_input_arg, filter_urls=["^((?!.*/v.*).)*$"])
-    sitemap_loader.requests_per_second = 1
-    docs = sitemap_loader.load()
-    print("Count of sitemap docs loaded:", len(docs))
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size = 1000,
-        chunk_overlap  = 100,
-        length_function = len,
-    )
-    texts = text_splitter.split_documents(docs)
-    vectorstore = FAISS.from_documents(texts, embedding=HuggingFaceEmbeddings())
-else:
-    print("Unknown value for VECTOR_DB_INPUT_TYPE:", vectordb_input_type)
-    sys.exit(1)
+        service.create()
 
-pickle_byte_obj = pickle.dumps(vectorstore)
+    elif local_settings:
+        if weaviate_settings.is_set():
+            logging.info("---> LocalDirWeaviateDbCreationService")
+            service = LocalDirWeaviateDbCreationService(local_settings, weaviate_settings)
+        else:
+            logging.info("---> S3VectorDbCreationService")
+            service = S3VectorDbCreationService(local_settings)
 
-# Persist vectorstore to S3 bucket vectorstores
-s3_client = boto3.client('s3')
-s3_client.put_object(Body=pickle_byte_obj, Bucket=vectordb_bucket, Key=vectordb_key)
-print("Uploaded vectordb to", vectordb_bucket, vectordb_key)
-sys.exit(0)
+        service.create()
+
+    else:
+        # TODO: not really needed, error will be thrown earlier
+        raise "Missing config"
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    run()
